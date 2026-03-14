@@ -1,5 +1,8 @@
 {
-  "name": "otp-no-layout-change-project",
+  "name": "otp-vercel-project",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  }
 }
