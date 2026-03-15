@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const message = `আপনার OTP কোড: ${otp}`;
+    const message = `আপনার Nid পার্টনার পোর্টাল OTP কোড হলো: ${otp}`;
 
     const url =
       `https://sms.one9.one/sms/api?action=send-sms` +
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "OTP পাঠানো হয়েছে",
+      message: "আপনার মোবাইল নম্বরে OTP পাঠানো হয়েছে",
       providerResponse: text
     });
   } catch (error) {
