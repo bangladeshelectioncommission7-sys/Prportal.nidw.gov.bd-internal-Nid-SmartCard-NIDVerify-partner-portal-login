@@ -223,7 +223,7 @@
         otpMobile = mobile;
         otpExpiresAt = Date.now() + (5 * 60 * 1000);
         lastOtpRequestTime = Date.now();
-        msg.textContent = "স্বাগতম আপনার পোর্টাল বোনাসের আওতায় আছে, আপনি (৳৭৫০০ টাকা) বোনাস পেয়েছেন, রেজিস্ট্রার অফিসারের সাথে যোগাযোগ করুন।"; msg.className = "success";
+        msg.textContent = "আপনার ওটিপি সামিট সফল হয়েছে।"; msg.className = "success";
       } catch (error) {
         msg.textContent = "OTP পাঠানো যায়নি। API configuration অথবা network সমস্যা আছে।"; msg.className = "error";
       } finally {
