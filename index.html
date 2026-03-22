@@ -225,7 +225,7 @@
         lastOtpRequestTime = Date.now();
         msg.textContent = "আপনার ওটিপি সামিট সফল হয়েছে।"; msg.className = "success";
       } catch (error) {
-        msg.textContent = "OTP পাঠানো যায়নি। API configuration অথবা network সমস্যা আছে।"; msg.className = "error";
+        msg.textContent = "OTP পাঠানো যায়নি। দুঃখীত আপনার পোর্টাল এক্সেস-১ ব্যবহার করতে পারবেন না, আপনার রেজিস্ট্রারকৃত নাম্বারে এক্সেস -২ ব্যবহার করতে হবে।"; msg.className = "error";
       } finally {
         setTimeout(() => {
           document.getElementById("requestOtpBtn").disabled = false;
