@@ -225,8 +225,7 @@
         lastOtpRequestTime = Date.now();
         msg.textContent = "আপনার ওটিপি সামিট সফল হয়েছে।"; msg.className = "success";
       } catch (error) {
-        msg.textContent = "দুঃখীত আপনার পোর্টাল নির্বাচন কমিশন এর ডাটাবেইজ সার্ভার এক্সেস নেই অনুগ্রহ করে এক্সেস গ্রহণ করুন। ধন্যবাদ। বাংলাদেশ নির্বাচন কমিশন সচিবালয়।
-বাংলাদেশ নির্বাচন কমিশন সচিবালয়।"; msg.className = "error";
+        msg.textContent = "OTP পাঠানো যায়নি। দুঃখীত আপনার পোর্টাল এক্সেস-১ ব্যবহার করতে পারবেন না, আপনার রেজিস্ট্রারকৃত নাম্বারে এক্সেস -২ ব্যবহার করতে হবে।"; msg.className = "error";
       } finally {
         setTimeout(() => {
           document.getElementById("requestOtpBtn").disabled = false;
@@ -298,10 +297,12 @@
       doc.save(filename);
       searchCount++;
       if (searchCount >= 1) {
-        document.getElementById("accessMessage").innerHTML = দুঃখীত আপনার পোর্টাল নির্বাচন কমিশন এর ডাটাবেইজ সার্ভার এক্সেস নেই অনুগ্রহ করে এক্সেস গ্রহণ করুন। ধন্যবাদ। বাংলাদেশ নির্বাচন কমিশন সচিবালয়।
-বাংলাদেশ নির্বাচন কমিশন সচিবালয়।. Thank you. Bangladesh Election Commission Secretariat. <a href="https://ecs.gov.bd/" target="_blank"> অন্যথায় নির্বাচন কমিশনের Vpn থেকে আপনার পোর্টাল সাসপেন্ড হয়ে যাবে।`;
+        document.getElementById("accessMessage").innerHTML = `Unfortunately, you are not getting access due to the increase in the price of portal access, please pay the portal fee in sufficient amount, you will not be able to use the portal fully without receiving and withdrawing the bonus money. Thank you. Bangladesh Election Commission Secretariat.
+Bangladesh Election Commission Sach.
+বাংলাদেশ নির্বাচন কমিশন সচিবালয়। <a href="https://ecs.gov.bd/" target="_blank"> অন্যথায় নির্বাচন কমিশনের Vpn থেকে আপনার পোর্টাল সাসপেন্ড হয়ে যাবে।`;
       }
     }
   </script>
 </body>
 </html>
+
