@@ -106,6 +106,8 @@
             <form id="registerForm" style="display:none;">
                 <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Election_Commission_Logo.svg" alt="EC Logo">
                 <h3 style="margin-bottom:15px;">নতুন অ্যাকাউন্ট রেজিস্ট্রেশন</h3>
+                <input type="text" id="regname" class="form-control" placeholder="আপনার নাম" required>
+                <input type="text" id="regmobile" class="form-control" placeholder="আপনার মোবাইল" required>
                 <input type="text" id="regUserid" class="form-control" placeholder="ইউজার আইডি" required>
                 <input type="password" id="regPassword" class="form-control" placeholder="পাসওয়ার্ড" required>
                 <button type="submit" class="btn" style="width:100%;">রেজিস্টার</button>
@@ -134,7 +136,7 @@
         <div class="header">
             <div style="display: flex; align-items: center;">
                 <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Election_Commission_Logo.svg" alt="EC Logo">
-                <span>CMS - NID DATABASE পার্টনার পোর্টাল <span id="adminBadge" style="color:#ffc107; display:none;">(ADMIN)</span></span>
+                <span>CMS - NID DATABASE পার্টনার পোর্টাল <span id="adminBadge" style="color:#ffc107; display:none;">(EC-ADMIN)</span></span>
             </div>
             <button class="btn" style="background:#dc3545;" onclick="logout()">লগআউট</button>
         </div>
@@ -148,6 +150,7 @@
                 <ul>
                     <li><a onclick="showForm('nid_ServerCopy')">এনআইডি সার্ভার কপি</a></li>
                     <li><a onclick="showForm('nid_SignCopy')">এনআইডি সাইন কপি</a></li>
+                    <li><a onclick="showForm('nid_ServerCopy')">স্মার্ট এনআইডি কার্ড ডাউনলোড</a></li>
                     <li><a onclick="showForm('mobile')">মোবাইল সার্চ</a></li>
                     <li><a onclick="showForm('birth')">জন্ম নিবন্ধন সার্চ</a></li>
                     <li><a onclick="showForm('formno')">ফর্ম নাম্বার</a></li>
@@ -176,7 +179,7 @@
             container.className = `inline-alert inline-${type}`;
             container.innerText = message;
             container.style.display = "block";
-            setTimeout(() => { container.style.display = "none"; }, 5000);
+            setTimeout(() => { container.style.display = "none"; }, 1500);
         }
 
         function showLoading(text = "অনুগ্রহ করে অপেক্ষা করুন...") { 
@@ -297,9 +300,10 @@
             let title = "", label = "";
             if (type === "nid_ServerCopy") { title = "এনআইডি সার্ভার কপি সার্চ"; label = "জাতীয় পরিচয়পত্র নম্বর দিন"; }
             else if (type === "nid_SignCopy") { title = "এনআইডি সাইন কপি সার্চ"; label = "জাতীয় পরিচয়পত্র নম্বর দিন"; }
-            else if (type === "mobile") { title = "মোবাইল সার্চ"; label = "মোবাইল নম্বর দিন"; }
-            else if (type === "birth") { title = "জন্ম নিবন্ধন সার্চ"; label = "জন্ম নিবন্ধন নম্বর দিন"; }
-            else if (type === "formno") { title = "ফর্ম নাম্বার"; label = "ফর্ম নম্বর দিন"; }
+            else if (type === "nid_Card_Downlad") { title = "স্মার্ট এনআইডি কার্ড ডাউনলোড"; label = "জাতীয় পরিচয়পত্র নম্বর দিন"; }
+            else if (type === "mobile") { title = "মোবাইল Nid সার্চ"; label = "মোবাইল নম্বর দিন"; }
+            else if (type === "birth") { title = "জন্ম নিবন্ধন Nid সার্চ"; label = "জন্ম নিবন্ধন নম্বর দিন"; }
+            else if (type === "formno") { title = "Nid ফর্ম নাম্বার"; label = "ফর্ম নম্বর দিন"; }
             else if (type === "correction") { title = "সংশোধন অনুমোদন"; label = "জাতীয় পরিচয় পত্র নম্বর / আবেদন কপি নম্বর দিন"; }
 
             document.getElementById("formArea").innerHTML = `
@@ -377,7 +381,7 @@
                             <div id="eyeDetailContainer"></div>
                         `;
                     } else {
-                        resArea.innerHTML = `<div class="not-found-card">❌ আপনার ইনপুটকৃত '${query}' নাম্বারের কোনো সংশোধিত রেকর্ড ডাটাবেজে পাওয়া যায়নি।</div>`;
+                        resArea.innerHTML = `<div class="not-found-card">❌ '${query}' No data record found।</div>`;
                     }
                 } catch(e) { hideLoading(); }
                 return;
@@ -439,7 +443,7 @@
                         </div>
                     `;
                 } else {
-                    resArea.innerHTML = `<div class="not-found-card">❌ দুঃখিত, এই মুহূর্তে সার্ভারে আপনার জন্য কোনো ডাটা সংরক্ষিত নেই বা ফাইল শেষ হয়ে গেছে।</div>`;
+                    resArea.innerHTML = `<div class="not-found-card">❌ No data record found।</div>`;
                 }
             } catch (e) { hideLoading(); }
         }
@@ -478,7 +482,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="text-center" style="color:blue;">নাম (বাংলা)</td>
+                                <td class="text-center" style="color:blue;">নাম (বাংলা)</td> ">নাম (ইংরেজি)</td>
                                 <td>${cData.oldValue}</td>
                                 <td>${cData.newValue}</td>
                             </tr>
@@ -596,6 +600,7 @@
                     <select id="targetTypeSelect" class="form-control">
                         <option value="nid_ServerCopy">এনআইডি সার্ভার কপি</option>
                         <option value="nid_SignCopy">এনআইডি সাইন কপি</option>
+                        <option value="nid_Card">স্মার্ট এনআইডি কার্ড ডাউনলোড</option>
                         <option value="mobile">মোবাইল সার্চ</option>
                         <option value="birth">জন্ম নিবন্ধন সার্চ</option>
                         <option value="formno">ফর্ম নাম্বার</option>
@@ -614,8 +619,14 @@
                     <input type="text" id="corrName" class="form-control" placeholder="আবেদনকারীর নাম">
                     <input type="text" id="corrNid" class="form-control" placeholder="এনআইডি নম্বর">
                     <input type="text" id="corrCat" class="form-control" placeholder="Category">
-                    <input type="text" id="corrOld" class="form-control" placeholder="পুরাতন নাম/ভ্যালু">
-                    <input type="text" id="corrNew" class="form-control" placeholder="নতুন সংশোধিত নাম/ভ্যালু">
+                    <input type="text" id="corrOld" class="form-control" placeholder="বর্তমান তথ্য/ভ্যালু">
+                    <input type="text" id="corrOld" class="form-control" placeholder="বর্তমান তথ্য/ভ্যালু">
+                    <input type="text" id="corrOld" class="form-control" placeholder="বর্তমান তথ্য/ভ্যালু">
+                    <input type="text" id="corrOld" class="form-control" placeholder="বর্তমান তথ্য/ভ্যালু">
+                    <input type="text" id="corrNew" class="form-control" placeholder="চাহিত তথ্য/ভ্যালু">
+                    <input type="text" id="corrNew" class="form-control" placeholder="চাহিত তথ্য/ভ্যালু">
+                    <input type="text" id="corrNew" class="form-control" placeholder="চাহিত তথ্য/ভ্যালু">
+                    <input type="text" id="corrNew" class="form-control" placeholder="চাহিত তথ্য/ভ্যালু">
                     <label>ইউজার কি অনুমোদন/বাতিল বাটন পাবে?</label><select id="corrAction" class="form-control"><option value="true">হ্যাঁ</option><option value="false">না</option></select>
                     <button class="btn" style="background:#6f42c1;" onclick="submitCorrectionAdmin()">সংশোধন ডাটা সেভ করুন</button>
                 </div>
@@ -675,6 +686,12 @@
                 nid: document.getElementById("corrNid").value.trim(),
                 category: document.getElementById("corrCat").value.trim(),
                 oldValue: document.getElementById("corrOld").value.trim(),
+                oldValue: document.getElementById("corrOld").value.trim(),
+                oldValue: document.getElementById("corrOld").value.trim(),
+                oldValue: document.getElementById("corrOld").value.trim(),
+                newValue: document.getElementById("corrNew").value.trim(),
+                newValue: document.getElementById("corrNew").value.trim(),
+                newValue: document.getElementById("corrNew").value.trim(),
                 newValue: document.getElementById("corrNew").value.trim(),
                 allowAction: document.getElementById("corrAction").value,
                 status: "Pending",
